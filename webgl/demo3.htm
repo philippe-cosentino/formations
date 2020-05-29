@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Troisième démo</title>
+	<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js/build/three.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/js/loaders/GLTFLoader.js"></script>
+	
+
+	<style>
+		body { margin: 0; padding: 0; position:fixed; }
+		canvas { width: 100%; height: 100%; }
+	</style>
+</head>
+<body>
+<script>
+	let WIDTH = window.innerWidth;
+	let HEIGHT = window.innerHeight;
+	let scene, renderer,camera;
+	const PI=Math.PI;
+	
+	function render() {
+		requestAnimationFrame(render);
+		renderer.render(scene, camera);
+	}
+	
+	function prepareScene () {
+		renderer = new THREE.WebGLRenderer({antialias:true});
+		renderer.setSize(WIDTH, HEIGHT);
+		renderer.setClearColor(0x87ceeb, 1); // FFFFFF c'est blanc, le fond de la scène sera blanc
+		document.body.appendChild(renderer.domElement);
+
+		scene = new THREE.Scene();
+
+		camera = new THREE.PerspectiveCamera(70, WIDTH/HEIGHT);
+		camera.position.y = 10; //on "élève" la caméra de 10 unités, pour pas être au ras du sol
+		scene.add(camera);
+		
+		lumiereAmbiante = new THREE.AmbientLight( 0x777777 ); // lumière blanche 
+		scene.add( lumiereAmbiante );
+		
+		lumiereDirectionnelle = new THREE.DirectionalLight( 0xffffff,1 );
+		lumiereDirectionnelle.position.set(100,300,200);
+		scene.add( lumiereDirectionnelle );
+		
+	}
+	
+	function peupleScene () {
+		// sol de la scène (un plan avec du gazon)
+		let geometrieSol = new THREE.PlaneGeometry( 1000, 1000, 10 ); // le sol est un grand plan de 1000 unités de côté
+		let textureSol = new THREE.TextureLoader().load( "https://cdn.jsdelivr.net/gh/philippe-cosentino/formations/herbe.jpg" );
+		textureSol.repeat.set( 100, 100 );
+		textureSol.wrapS = THREE.RepeatWrapping;
+        textureSol.wrapT = THREE.RepeatWrapping;
+		let materiauSol = new THREE.MeshStandardMaterial( {map: textureSol} ); 
+		sol = new THREE.Mesh( geometrieSol, materiauSol );
+		// de base le "sol" est un plan vertical, on va devoir le faire tourner de PI/2 radians (90°)
+		sol.rotation.set (-PI/2,0,0);
+		scene.add( sol );
+		
+		let geometrieCube = new THREE.BoxGeometry(10, 10, 10); // 10 unités pour chaque côté
+		let materiauRouge = new THREE.MeshStandardMaterial({color:"red"});
+		let materiauBleu = new THREE.MeshStandardMaterial({color:"blue"});
+		let materiauKaki = new THREE.MeshStandardMaterial({color:0xF0E68C}); // j'ai tapé couleur kaki dans google pour avoir la valeur
+		
+		let loader = new THREE.GLTFLoader();
+		loader.crossOrigin = true;
+		loader.load( 'https://raw.githubusercontent.com/SamsungInternet/ar-demos/master/src/obj/pikachu/pikachu.gltf', function ( data ) {
+
+		  
+			pikachu = data.scene;
+			pikachu.position.set(0,10,-55)
+			pikachu.scale.set(2,2,2)
+			scene.add( pikachu );
+		});
+
+
+		
+		cube1 = new THREE.Mesh(geometrieCube, materiauRouge);
+		scene.add(cube1);
+		cube1.position.set(0,0,-50); // position en x y et z => x y et z. 0,0,0 c'est le centre de la scène
+		
+		cube2 = new THREE.Mesh(geometrieCube, materiauBleu);
+		scene.add(cube2);
+		cube2.position.set(40,30,-50); // x va vers la droite, y vers le haut, z vers ... l'humain derrière son clavier
+		cube2.scale.set(0.5, 0.5, 0.5); // on change l'échelle de ce cube sur les 3 axes
+		
+		cube3 = new THREE.Mesh(geometrieCube, materiauKaki);
+		scene.add(cube3);
+		cube3.position.set(10,20,-50);
+		cube3.rotation.set(0, PI/6, 0); // on fait tourner le cube de PI/6 radians sur l'axe y
+		
+		let geometrieSphere = new THREE.SphereGeometry(10,32,32); // 10 unités de rayon , 32 32 c'est le nombre de polygones, plus le nombre est grand plus la sphère est "lisse" mais ça rame !
+		boule1 = new THREE.Mesh(geometrieSphere, materiauRouge);
+		scene.add(boule1);
+		boule1.position.set(50,10,-150);
+		
+		boule2 = new THREE.Mesh(geometrieSphere, materiauBleu);
+		scene.add(boule2);
+		boule2.position.set(100,150,-150);
+		
+		let materiauTresBrillant = new THREE.MeshPhongMaterial( {  // on peut faire des matériaux très élaborés
+			color: "green", // couleur de base verte
+			specular: "yellow",  // couleur du reflet jaune
+			shininess: 15  // la shininess règle la force du reflet direct, essayez de la changer !
+		} ) 
+		boule3 = new THREE.Mesh(geometrieSphere, materiauTresBrillant);
+		scene.add(boule3);
+		boule3.position.set(100,50,-150);
+		
+		let materiauVerre = new THREE.MeshPhongMaterial( {  // et même transparents
+			color: 0x77FFFF, // couleur de base cyan très clair
+			specular: "yellow", 
+			shininess: 15,
+			transparent:true, // on dit que c'est transparent
+			opacity:0.5  // avec une opacité de 50%
+		} ) 
+		boule4 = new THREE.Mesh(geometrieSphere, materiauVerre);
+		boule4.scale.set(1,1, 1); 
+		scene.add(boule4);
+		boule4.position.set(10,0,-40);
+		
+		
+		// enfin, on dit au "spot" de lumière directionnelle de "viser" le cube1 ... mais vous pouvez changer de cible
+		lumiereDirectionnelle.target=cube1;
+	}
+	
+	prepareScene();
+	peupleScene();
+	render();
+</script>
+</body>
+</html>
